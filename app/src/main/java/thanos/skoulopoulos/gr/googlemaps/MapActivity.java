@@ -1,8 +1,6 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -23,6 +21,12 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "MapActivity";
@@ -51,7 +55,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             map.setMyLocationEnabled(true);//location spot on map
             map.getUiSettings().setMyLocationButtonEnabled(false);//disable the by default location button
             map.getUiSettings().setCompassEnabled(true);
-          
+
         }
     }
 
@@ -85,6 +89,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                        Log.d(TAG, "onComplete: Found current location!");
                        Location currentLocation =  (Location) task.getResult();
                        moveCamera(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()),DEFAULT_ZOOM);
+                       //find close shops
+                       DataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
                    }else{
                        Log.d(TAG, "onComplete: Current location is null");
                        Toast.makeText(MapActivity.this, "Unable to get curr location", Toast.LENGTH_SHORT).show();
@@ -125,6 +131,27 @@ private void initMap() {
             }
 
         }
+    }
+
+    public void DataFromServer(double lat,double lon){
+        GetDataService service = DataClientInstance.getRetrofitInstance().create(GetDataService.class);
+        Call<List<Store>> callLatList = service.getNearbyStores(lat,lon);
+        callLatList.enqueue(new Callback<List<Store>>() {
+            @Override
+            public void onResponse(Call<List<Store>> call, Response<List<Store>> response) {
+                generateMapPoints(response.body());
+            }
+
+            @Override
+            public void onFailure(Call<List<Store>> call, Throwable t) {
+                Log.d(TAG, "onFailure: Something get wrong");
+            }
+        });
+
+    }
+    public void generateMapPoints(List<Store> storeList){
+        Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList);
+
     }
 }
 
