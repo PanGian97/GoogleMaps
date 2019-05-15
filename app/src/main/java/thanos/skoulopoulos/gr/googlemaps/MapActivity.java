@@ -134,22 +134,22 @@ private void initMap() {
     }
 
     public void DataFromServer(double lat,double lon){
-        GetDataService service = DataClientInstance.getRetrofitInstance().create(GetDataService.class);
-        Call<List<Store>> callLatList = service.getNearbyStores(lat,lon);
-        callLatList.enqueue(new Callback<List<Store>>() {
+        GetDataService service = RetrofitClientInstance.getRetrofitInstance().create(GetDataService.class);
+        Call<List<RetroPhoto>> callList = service.getAllPhotos();
+        callList.enqueue(new Callback<List<RetroPhoto>>() {
             @Override
-            public void onResponse(Call<List<Store>> call, Response<List<Store>> response) {
+            public void onResponse(Call<List<RetroPhoto>> call, Response<List<RetroPhoto>> response) {
                 generateMapPoints(response.body());
             }
 
             @Override
-            public void onFailure(Call<List<Store>> call, Throwable t) {
+            public void onFailure(Call<List<RetroPhoto>> call, Throwable t) {
                 Log.d(TAG, "onFailure: Something get wrong");
             }
         });
 
     }
-    public void generateMapPoints(List<Store> storeList){
+    public void generateMapPoints(List<RetroPhoto> storeList){
         Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList);
 
     }

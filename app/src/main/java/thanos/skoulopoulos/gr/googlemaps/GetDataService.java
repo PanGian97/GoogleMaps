@@ -9,7 +9,11 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface GetDataService {
-    @GET("stores/nearby_test?token=test")
-    //user cordinates
-    Call<List<Store>> getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
+//    @GET("stores/nearby_test?token=test")
+//    //user cordinates
+//    Call<List<DataObject>> getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
+
+        @GET("/photos")
+        Call<List<RetroPhoto>> getAllPhotos();
+
 }
