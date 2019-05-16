@@ -139,6 +139,12 @@ public class Results
         return lon;
     }
 
+    public Double getLonToDouble ()
+    {
+        double lonToDouble = Double.parseDouble(lon);
+        return lonToDouble;
+    }
+
     public void setLon (String lon)
     {
         this.lon = lon;
@@ -157,6 +163,12 @@ public class Results
     public String getLat ()
     {
         return lat;
+    }
+
+    public Double getLatToDouble ()
+    {
+        double latToDouble = Double.parseDouble(lat);
+        return latToDouble;
     }
 
     public void setLat (String lat)

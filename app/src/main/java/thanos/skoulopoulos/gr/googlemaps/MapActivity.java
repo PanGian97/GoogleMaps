@@ -19,9 +19,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -37,7 +39,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
-
+    private ArrayList<Results> stores;
     //private FusedLocationProviderClient fusedLocationProviderClient;
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -136,20 +138,26 @@ private void initMap() {
     public void dataFromServer(double lat, double lon){
 
         GetDataService service = DataClientInstance.getRetrofitDataInstance().create(GetDataService.class);
-        Call<List<FormatedData>> callList = service.getNearbyStores();
-        callList.enqueue(new Callback<List<FormatedData>>() {
+        Call<FormatedData> callList = service.getNearbyStores(lat,lon);
+        callList.enqueue(new Callback<FormatedData>() {
             @Override
-            public void onResponse(Call<List<FormatedData>> call, Response<List<FormatedData>> response) {
+            public void onResponse(Call<FormatedData> call, Response<FormatedData> response) {
                // generateMapPoints(response.body());
-                List<FormatedData> formatedDataList = response.body();
-                for (FormatedData fd: formatedDataList){
-                    fd.toString();
+               FormatedData formatedData = response.body();
+                stores = formatedData.getResults();
+                Log.d(TAG, "onResponse: MAP_POINTS------->  "+stores.get(0).toString());
+
+                for (Results store: stores) {
+                    map.addMarker(new MarkerOptions()
+                            .position(new LatLng(store.getLatToDouble(), store.getLonToDouble()))
+                            .title(store.getName()));
+
                 }
-                Log.d(TAG, "onResponse: MAP_POINTS------->  ");
+
             }
 
             @Override
-            public void onFailure(Call<List<FormatedData>> call, Throwable t) {
+            public void onFailure(Call<FormatedData> call, Throwable t) {
                 Log.d(TAG, "onFailure: @@@@@@Something get wrong");
             }
         });
