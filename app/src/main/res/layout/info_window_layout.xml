@@ -4,10 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:layout_margin="5dp"
-    android:background="@color/marker_info_background"
+    android:background="@drawable/border"
     >
 
     <TextView
@@ -16,9 +16,9 @@
         android:layout_height="86dp"
         android:layout_margin="5dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-
+        android:layout_marginTop="4dp"
         android:text="example"
+        android:textColor="@color/marker_info"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/store_title" />
 
@@ -28,10 +28,10 @@
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:text="example"
 
-        android:textColor="@color/colorAccent"
+        android:textColor="@color/marker_name"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -51,7 +51,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_begin="146dp" />
+        app:layout_constraintGuide_begin="157dp" />
 
 </android.support.constraint.ConstraintLayout>
 
