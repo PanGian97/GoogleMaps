@@ -4,8 +4,8 @@ import com.google.gson.annotations.SerializedName;
 
 public class Results
 {
-    public Results(String distance,String id,String name,String address,String tel
-    ,String street,String site,String lat,String lon,String image_url,String is_open,String is_fav){
+    public Results(Double distance,Integer id,String name,String address,String tel
+    ,Integer street,String site,String lat,String lon,String image_url,Integer is_open,Integer is_fav){
         this.distance = distance;
         this.id = id;
         this.name = name;
@@ -24,23 +24,23 @@ public class Results
     @SerializedName("address")
     private String address;
     @SerializedName("distance")
-    private String distance;
+    private Double distance;
     @SerializedName("is_open")
-    private String is_open;
+    private Integer is_open;
     @SerializedName("street")
-    private String street;
+    private Integer street;
     @SerializedName("image_url")
     private String image_url;
     @SerializedName("name")
     private String name;
     @SerializedName("is_fav")
-    private String is_fav;
+    private Integer is_fav;
     @SerializedName("tel")
     private String tel;
     @SerializedName("lon")
     private String lon;
     @SerializedName("id")
-    private String id;
+    private Integer id;
     @SerializedName("lat")
     private String lat;
 
@@ -64,32 +64,32 @@ public class Results
         this.address = address;
     }
 
-    public String getDistance ()
+    public Double getDistance ()
     {
         return distance;
     }
 
-    public void setDistance (String distance)
+    public void setDistance (Double distance)
     {
         this.distance = distance;
     }
 
-    public String getIs_open ()
+    public Integer getIs_open ()
     {
         return is_open;
     }
 
-    public void setIs_open (String is_open)
+    public void setIs_open (Integer is_open)
     {
         this.is_open = is_open;
     }
 
-    public String getStreet ()
+    public Integer getStreet ()
     {
         return street;
     }
 
-    public void setStreet (String street)
+    public void setStreet (Integer street)
     {
         this.street = street;
     }
@@ -114,12 +114,12 @@ public class Results
         this.name = name;
     }
 
-    public String getIs_fav ()
+    public Integer getIs_fav ()
     {
         return is_fav;
     }
 
-    public void setIs_fav (String is_fav)
+    public void setIs_fav (Integer is_fav)
     {
         this.is_fav = is_fav;
     }
@@ -144,12 +144,12 @@ public class Results
         this.lon = lon;
     }
 
-    public String getId ()
+    public Integer getId ()
     {
         return id;
     }
 
-    public void setId (String id)
+    public void setId (Integer id)
     {
         this.id = id;
     }

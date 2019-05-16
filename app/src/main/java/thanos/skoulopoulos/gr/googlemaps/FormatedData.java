@@ -11,6 +11,13 @@ public class FormatedData
 @SerializedName("results")
     private Results[] results;
 
+    public FormatedData(String rs,String rm, Results[] results) {
+        this.rm=rm;
+        this.rs=rs;
+        this.results=results;
+
+    }
+
     public String getRs ()
     {
         return rs;

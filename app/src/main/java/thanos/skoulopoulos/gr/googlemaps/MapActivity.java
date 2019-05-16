@@ -90,7 +90,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                        Location currentLocation =  (Location) task.getResult();
                        moveCamera(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()),DEFAULT_ZOOM);
                        //find close shops
-                       DataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
+                       dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
                    }else{
                        Log.d(TAG, "onComplete: Current location is null");
                        Toast.makeText(MapActivity.this, "Unable to get curr location", Toast.LENGTH_SHORT).show();
@@ -133,24 +133,30 @@ private void initMap() {
         }
     }
 
-    public void DataFromServer(double lat,double lon){
-        GetDataService service = RetrofitClientInstance.getRetrofitInstance().create(GetDataService.class);
-        Call<List<RetroPhoto>> callList = service.getAllPhotos();
-        callList.enqueue(new Callback<List<RetroPhoto>>() {
+    public void dataFromServer(double lat, double lon){
+
+        GetDataService service = DataClientInstance.getRetrofitDataInstance().create(GetDataService.class);
+        Call<List<FormatedData>> callList = service.getNearbyStores();
+        callList.enqueue(new Callback<List<FormatedData>>() {
             @Override
-            public void onResponse(Call<List<RetroPhoto>> call, Response<List<RetroPhoto>> response) {
-                generateMapPoints(response.body());
+            public void onResponse(Call<List<FormatedData>> call, Response<List<FormatedData>> response) {
+               // generateMapPoints(response.body());
+                List<FormatedData> formatedDataList = response.body();
+                for (FormatedData fd: formatedDataList){
+                    fd.toString();
+                }
+                Log.d(TAG, "onResponse: MAP_POINTS------->  ");
             }
 
             @Override
-            public void onFailure(Call<List<RetroPhoto>> call, Throwable t) {
-                Log.d(TAG, "onFailure: Something get wrong");
+            public void onFailure(Call<List<FormatedData>> call, Throwable t) {
+                Log.d(TAG, "onFailure: @@@@@@Something get wrong");
             }
         });
 
     }
-    public void generateMapPoints(List<RetroPhoto> storeList){
-        Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList);
+    public void generateMapPoints(List<FormatedData> storeList){
+        Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList.toString());
 
     }
 }

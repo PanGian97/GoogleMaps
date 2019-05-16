@@ -7,7 +7,7 @@ public class DataClientInstance {
 
 
     private static Retrofit retrofit;
-    private static final String BASE_URL = "http://www.anaxoft.com/goandwin_production/api/";
+    private static final String BASE_URL = "http://www.anaxoft.com/";
 
     public static Retrofit getRetrofitDataInstance() {
         if (retrofit == null) {
@@ -15,6 +15,7 @@ public class DataClientInstance {
                     .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
+
         }
         return retrofit;
     }

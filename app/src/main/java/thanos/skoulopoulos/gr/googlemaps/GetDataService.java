@@ -11,9 +11,12 @@ import retrofit2.http.Query;
 public interface GetDataService {
 //    @GET("stores/nearby_test?token=test")
 //    //user cordinates
-//    Call<List<DataObject>> getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
+//    Call<List<FormatedData>> getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
 
-        @GET("/photos")
-        Call<List<RetroPhoto>> getAllPhotos();
+    @GET("goandwin_production/ai/stores/nearby_test?lat=37.975620&lon=23.734529&token=test")
+    //user cordinates
+    Call<List<FormatedData>> getNearbyStores();
+//        @GET("/photos")
+//        Call<List<RetroPhoto>> getAllPhotos();
 
 }
