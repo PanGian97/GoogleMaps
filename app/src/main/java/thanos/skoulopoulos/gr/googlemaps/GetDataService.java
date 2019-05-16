@@ -13,7 +13,7 @@ public interface GetDataService {
 //    //user cordinates
 //    Call<List<FormatedData>>
 
-    @GET("goandwin_production/api/stores/nearby_test?lat=37.975620&lon=23.734529&token=test")
+    @GET("nearby_test?lat=37.975620&lon=23.734529&token=test")
     //user cordinates
     Call<FormatedData>  getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
 

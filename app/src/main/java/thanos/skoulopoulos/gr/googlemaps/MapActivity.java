@@ -3,6 +3,7 @@ package thanos.skoulopoulos.gr.googlemaps;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.provider.SearchRecentSuggestions;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -18,17 +19,22 @@ import com.google.android.gms.maps.GoogleMap;
 //import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static android.provider.MediaStore.Images.Media.getBitmap;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "MapActivity";
@@ -40,6 +46,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
+    private ArrayList<String> storeUrlList;
+    private String storePictureUrl;
+
     //private FusedLocationProviderClient fusedLocationProviderClient;
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -111,6 +120,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             Log.d(TAG, "moveCamera: Moving the camera to lat "+latLng.latitude+
                     " lng "+latLng.longitude);
            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoom));
+
         }
 private void initMap() {
     Log.d(TAG, "initMap: Initializing map");
@@ -148,10 +158,16 @@ private void initMap() {
                 Log.d(TAG, "onResponse: MAP_POINTS------->  "+stores.get(0).toString());
 
                 for (Results store: stores) {
+                    Gson gson = new Gson();
+                    String markerStoreInfoString = gson.toJson(store);
+
                     map.addMarker(new MarkerOptions()
                             .position(new LatLng(store.getLatToDouble(), store.getLonToDouble()))
-                            .title(store.getName()));
-
+                            .title(store.getName())
+                            .snippet(markerStoreInfoString)
+                    );
+                    storePictureUrl = DataClientInstance.getImageBaseUrl()+store.getId().toString()+store.getImage_url();
+                    map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
                 }
 
             }

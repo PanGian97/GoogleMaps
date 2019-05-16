@@ -1,9 +1,20 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
+import android.annotation.SuppressLint;
+
 import com.google.gson.annotations.SerializedName;
+
+import java.util.HashMap;
 
 public class Results
 {
+
+
+
+
+    @SuppressLint("UseSparseArrays")
+    HashMap<Integer,String> hashMapIdName = new HashMap<Integer, String>();
+
     public Results(Double distance,Integer id,String name,String address,String tel
     ,Integer street,String site,String lat,String lon,String image_url,Integer is_open,Integer is_fav){
         this.distance = distance;
@@ -99,6 +110,12 @@ public class Results
         return image_url;
     }
 
+    public String getFullImage_url ()
+    {
+
+        return DataClientInstance.getImageBaseUrl()+getId().toString()+image_url;
+    }
+
     public void setImage_url (String image_url)
     {
         this.image_url = image_url;
@@ -181,4 +198,5 @@ public class Results
     {
         return "ClassPojo [site = "+site+", address = "+address+", distance = "+distance+", is_open = "+is_open+", street = "+street+", image_url = "+image_url+", name = "+name+", is_fav = "+is_fav+", tel = "+tel+", lon = "+lon+", id = "+id+", lat = "+lat+"]";
     }
+
 }

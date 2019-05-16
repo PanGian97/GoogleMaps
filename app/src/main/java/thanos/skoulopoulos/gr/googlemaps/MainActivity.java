@@ -8,6 +8,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+
+import com.squareup.picasso.Picasso;
 
 public class MainActivity extends AppCompatActivity {
      RecyclerView recyclerView;
@@ -37,5 +40,8 @@ init();
                 startActivity(intent);
             }
         });
+
+
+
     }
 }
