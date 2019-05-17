@@ -38,7 +38,6 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.gson.Gson;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.maps.android.SphericalUtil;
 
@@ -69,6 +68,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     LatLngBounds.Builder latLngBuilder;
     LatLng userMarkerLocation;
     CameraUpdate cameraUpdate;
+    private ArrayList<Results> storeList;
 
 
     //private FusedLocationProviderClient fusedLocationProviderClient;
@@ -257,9 +257,11 @@ private void geolocate(){
                     stores = formatedData.getResults();
                     Log.d(TAG, "onResponse: MAP_POINTS------->  " + stores.get(0).toString());
 
+                    setStoreList(stores);
+
                     for (Results store : stores) {
-                        Gson gson = new Gson();
-                        String markerStoreInfoString = gson.toJson(store);
+//                        Gson gson = new Gson();
+//                        String markerStoreInfoString = gson.toJson(store);
 
                        LatLng markerLocation = new LatLng(store.getLatToDouble(), store.getLonToDouble());
 
@@ -267,14 +269,15 @@ private void geolocate(){
                         Marker marker = map.addMarker(new MarkerOptions()
                                 .position(markerLocation)
                                 .title(store.getName())
-                                .snippet(markerStoreInfoString)
+                                .snippet(store.getId().toString())
                                 .visible(false)//they will be visible on a specific radius
                         );
                        mapBounds(userMarkerLocation,marker);
 
                         storePictureUrl = DataClientInstance.getImageBaseUrl() + store.getId().toString() + store.getImage_url();
-                        map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
+
                     }
+                    map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this, getStoreList()));
 
                 }
 
@@ -304,6 +307,14 @@ private void geolocate(){
     }
     public void hideSoftKeyboard(){
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+    }
+
+    public ArrayList<Results> getStoreList() {
+        return storeList;
+    }
+
+    public void setStoreList(ArrayList<Results> storeList) {
+        this.storeList = storeList;
     }
 }
 

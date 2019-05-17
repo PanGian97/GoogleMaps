@@ -18,15 +18,16 @@ import java.util.ArrayList;
 public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
     private static final String TAG = "CustomInfoWindowAdapter";
 private final View window;
-private Context context;
+    private final ArrayList<Results> storeList;
+    private Context context;
     String storeAddress;
     String storeImageUrl;
 
 
-    public CustomInfoWindowAdapter(Context context) {//passing object and context
+    public CustomInfoWindowAdapter(Context context, ArrayList<Results> storeList) {//passing object and context
         this.window= LayoutInflater.from(context).inflate(R.layout.info_window_layout,null);
         this.context=context;
-
+        this.storeList = storeList;
 
     }
 
@@ -36,12 +37,19 @@ private Context context;
         storeTitle.setText(title);
 
 
-        Gson gson = new Gson();
+       // Gson gson = new Gson();
 
-        Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
-        storeAddress = storeObject.getAddress();
-        storeImageUrl = storeObject.getFullImage_url();
-       // String address = marker.getSnippet();
+        //Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
+        String markerIdToString = marker.getSnippet();
+        int markerId =Integer.parseInt(markerIdToString);
+        for(Results listId:storeList){
+            if(listId.getId()==markerId){
+              
+            }
+        }
+
+
+
         TextView storeAdress = (TextView)view.findViewById(R.id.store_address);
         storeAdress.setText(storeAddress);
 
