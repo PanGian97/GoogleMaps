@@ -1,10 +1,13 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.ConnectivityManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -22,16 +25,22 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 //import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.maps.android.SphericalUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,14 +56,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
+    private static final int STORE_RADIUS=6500;
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
     private ArrayList<String> storeUrlList;
     private String storePictureUrl;
+    private Boolean isConnected;
     EditText seachEditText;
     ImageView userLocationimage;
+    LatLngBounds.Builder latLngBuilder;
+    LatLng userMarkerLocation;
+    CameraUpdate cameraUpdate;
+
+
     //private FusedLocationProviderClient fusedLocationProviderClient;
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -76,6 +92,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             initUserLocation();
             initSeachBar();
 
+
         }
     }
 
@@ -96,6 +113,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         getLocationPermission();
 
 
+
     }
     private void getLocationPermission(){
         String[] permissions = {
@@ -109,6 +127,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                else{ ActivityCompat.requestPermissions(this,permissions,LOCATION_PERMISSION_REQUEST_CODE);}
             }else{ ActivityCompat.requestPermissions(this,permissions,LOCATION_PERMISSION_REQUEST_CODE);}
         }
+
+
+    private Boolean isNetworkConnected() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        if(cm.getActiveNetworkInfo() != null){
+            Log.d(TAG, "isNetworkConnected: INTERNET");
+        }else{
+            Toast.makeText(this, "NO INTERNET ACCESS!", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "isNetworkConnected: NO INTERNET ACCESS");
+        }
+        return cm.getActiveNetworkInfo()!=null;
+    }
+
+
         private void getDeviceLocation(){
             Log.d(TAG, "getDeviceLocation: getting current location ");
           fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -120,7 +153,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                    if(task.isSuccessful()){
                        Log.d(TAG, "onComplete: Found current location!");
                        Location currentLocation =  (Location) task.getResult();
-                       moveCamera(new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()),DEFAULT_ZOOM);
+
+                        userMarkerLocation = new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude());
+
+
+                       moveCamera(userMarkerLocation,DEFAULT_ZOOM);
                        //find close shops
                        dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
                    }else{
@@ -145,9 +182,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 private void initMap() {
     Log.d(TAG, "initMap: Initializing map");
-    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-    mapFragment.getMapAsync(this);//preparing map
-
+    if(isNetworkConnected()) {
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);//preparing map
+    }
+    else{
+        Log.d(TAG, "initMap: No internet access");
+    }
 }
 private void initSeachBar(){
     Log.d(TAG, "initSeachBar: Seach bar is initializing");
@@ -159,11 +200,15 @@ private void initSeachBar(){
               || i==EditorInfo.IME_ACTION_SEARCH
               || keyEvent.getAction()== KeyEvent.ACTION_DOWN
               || keyEvent.getAction()== KeyEvent.KEYCODE_ENTER) {
-           geolocate();
+
+          if(isNetworkConnected()) {geolocate();}
+          else{
+              Toast.makeText(MapActivity.this, "NO INTERNTE ACCESS", Toast.LENGTH_SHORT).show();}
       }
                return false;
            }
        });
+
        hideSoftKeyboard();
 }
 
@@ -203,35 +248,55 @@ private void geolocate(){
 
         GetDataService service = DataClientInstance.getRetrofitDataInstance().create(GetDataService.class);
         Call<FormatedData> callList = service.getNearbyStores(lat,lon);
-        callList.enqueue(new Callback<FormatedData>() {
-            @Override
-            public void onResponse(Call<FormatedData> call, Response<FormatedData> response) {
-               // generateMapPoints(response.body());
-               FormatedData formatedData = response.body();
-                stores = formatedData.getResults();
-                Log.d(TAG, "onResponse: MAP_POINTS------->  "+stores.get(0).toString());
+        if(isNetworkConnected()) {
+            callList.enqueue(new Callback<FormatedData>() {//Asynchronous
+                @Override
+                public void onResponse(Call<FormatedData> call, Response<FormatedData> response) {
+                    // generateMapPoints(response.body());
+                    FormatedData formatedData = response.body();
+                    stores = formatedData.getResults();
+                    Log.d(TAG, "onResponse: MAP_POINTS------->  " + stores.get(0).toString());
 
-                for (Results store: stores) {
-                    Gson gson = new Gson();
-                    String markerStoreInfoString = gson.toJson(store);
+                    for (Results store : stores) {
+                        Gson gson = new Gson();
+                        String markerStoreInfoString = gson.toJson(store);
 
-                    map.addMarker(new MarkerOptions()
-                            .position(new LatLng(store.getLatToDouble(), store.getLonToDouble()))
-                            .title(store.getName())
-                            .snippet(markerStoreInfoString)
-                    );
-                    storePictureUrl = DataClientInstance.getImageBaseUrl()+store.getId().toString()+store.getImage_url();
-                    map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
+                       LatLng markerLocation = new LatLng(store.getLatToDouble(), store.getLonToDouble());
+
+
+                        Marker marker = map.addMarker(new MarkerOptions()
+                                .position(markerLocation)
+                                .title(store.getName())
+                                .snippet(markerStoreInfoString)
+                                .visible(false)//they will be visible on a specific radius
+                        );
+                       mapBounds(userMarkerLocation,marker);
+
+                        storePictureUrl = DataClientInstance.getImageBaseUrl() + store.getId().toString() + store.getImage_url();
+                        map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this));
+                    }
+
                 }
 
-            }
+                @Override
+                public void onFailure(Call<FormatedData> call, Throwable t) {
+                    Log.d(TAG, "onFailure: @@@@@@Something get wrong");
+                }
+            });
+        }
+    }
 
-            @Override
-            public void onFailure(Call<FormatedData> call, Throwable t) {
-                Log.d(TAG, "onFailure: @@@@@@Something get wrong");
-            }
-        });
+    public void mapBounds(LatLng userPos,Marker marker) {
+        //Draw your circle
+        Circle circle = map.addCircle(new CircleOptions()
+                .center(userPos)
+                .radius(STORE_RADIUS)
+                .strokeColor(Color.rgb(226, 27, 96))
+                .fillColor(Color.argb(22, 225,224 , 215)));
 
+        if (SphericalUtil.computeDistanceBetween(userPos,marker.getPosition()) < STORE_RADIUS) {
+            marker.setVisible(true);
+        }
     }
     public void generateMapPoints(List<FormatedData> storeList){
         Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList.toString());

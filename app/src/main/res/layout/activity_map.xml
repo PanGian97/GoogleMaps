@@ -30,39 +30,51 @@
 
     <ImageView
         android:id="@+id/imageView2"
-        android:layout_width="45dp"
+        android:layout_width="0dp"
         android:layout_height="36dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="6dp"
-        app:layout_constraintStart_toStartOf="@+id/search_view"
+        app:layout_constraintBottom_toBottomOf="@+id/search_view"
+        app:layout_constraintEnd_toStartOf="@+id/guideline3"
         app:layout_constraintTop_toTopOf="@+id/search_view"
         app:srcCompat="@drawable/ic_search" />
 
     <EditText
         android:id="@+id/seach_editText"
 
-        android:layout_width="272dp"
-        android:layout_height="43dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
         android:ems="10"
-        android:inputType="textPersonName"
         android:hint="Enter Address, City or Zip code"
-
+        android:inputType="textPersonName"
+        android:text="text"
         android:textColor="#fff"
         app:layout_constraintBottom_toBottomOf="@+id/search_view"
-        app:layout_constraintStart_toEndOf="@+id/imageView2"
+        app:layout_constraintEnd_toStartOf="@+id/guideline2"
+        app:layout_constraintStart_toStartOf="@+id/guideline3"
         app:layout_constraintTop_toTopOf="@+id/search_view" />
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="45dp"
+        android:layout_width="0dp"
         android:layout_height="36dp"
-        android:layout_marginStart="344dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="4dp"
-        app:layout_constraintBottom_toBottomOf="@+id/seach_editText"
-        app:layout_constraintStart_toStartOf="@+id/search_view"
+        app:layout_constraintBottom_toBottomOf="@+id/search_view"
+        app:layout_constraintStart_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="@+id/search_view"
         app:srcCompat="@drawable/ic_location" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="325dp" />
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="40dp" />
 
 </android.support.constraint.ConstraintLayout>

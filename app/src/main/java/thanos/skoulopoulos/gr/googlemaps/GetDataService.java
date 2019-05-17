@@ -18,4 +18,5 @@ public interface GetDataService {
     Call<FormatedData>  getNearbyStores(@Query("lat") Double lat, @Query("lon") Double lon);
 
 
+
 }
