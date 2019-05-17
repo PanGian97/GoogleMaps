@@ -2,14 +2,22 @@ package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
-import android.provider.SearchRecentSuggestions;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -19,22 +27,19 @@ import com.google.android.gms.maps.GoogleMap;
 //import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static android.provider.MediaStore.Images.Media.getBitmap;
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
     private static final String TAG = "MapActivity";
@@ -48,7 +53,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private ArrayList<Results> stores;
     private ArrayList<String> storeUrlList;
     private String storePictureUrl;
-
+    EditText seachEditText;
+    ImageView userLocationimage;
     //private FusedLocationProviderClient fusedLocationProviderClient;
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -66,8 +72,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             map.setMyLocationEnabled(true);//location spot on map
             map.getUiSettings().setMyLocationButtonEnabled(false);//disable the by default location button
             map.getUiSettings().setCompassEnabled(true);
+            userLocationimage = (ImageView)findViewById(R.id.imageView);
+            initUserLocation();
+            initSeachBar();
 
         }
+    }
+
+    private void initUserLocation() {
+        userLocationimage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+              getDeviceLocation();
+            }
+        });
+
     }
 
     @Override
@@ -75,6 +94,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         getLocationPermission();
+
+
     }
     private void getLocationPermission(){
         String[] permissions = {
@@ -126,10 +147,43 @@ private void initMap() {
     Log.d(TAG, "initMap: Initializing map");
     SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
     mapFragment.getMapAsync(this);//preparing map
+
+}
+private void initSeachBar(){
+    Log.d(TAG, "initSeachBar: Seach bar is initializing");
+        seachEditText = (EditText)findViewById(R.id.seach_editText);
+       seachEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+           @Override
+           public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
+      if(i== EditorInfo.IME_ACTION_DONE
+              || i==EditorInfo.IME_ACTION_SEARCH
+              || keyEvent.getAction()== KeyEvent.ACTION_DOWN
+              || keyEvent.getAction()== KeyEvent.KEYCODE_ENTER) {
+           geolocate();
+      }
+               return false;
+           }
+       });
+       hideSoftKeyboard();
 }
 
+private void geolocate(){
+    Log.d(TAG, "geolocate: Geolocating");
+    String seachString = seachEditText.getText().toString();
+    Geocoder geocoder = new Geocoder(MapActivity.this);
+    List<Address> list = new ArrayList<>();
+    try{
+        list = geocoder.getFromLocationName(seachString,1);
+    }catch (IOException e ){
+        Log.d(TAG, "geolocate: IOException"+e.getMessage());
+    }
+    if(list.size()>0){
+        Address address = list.get(0);
 
-
+        Log.d(TAG, "geolocate: "+address.toString());
+        moveCamera(new LatLng(address.getLatitude(),address.getLongitude()),DEFAULT_ZOOM);
+    }
+}
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -182,6 +236,9 @@ private void initMap() {
     public void generateMapPoints(List<FormatedData> storeList){
         Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList.toString());
 
+    }
+    public void hideSoftKeyboard(){
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
 }
 
