@@ -39,6 +39,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.gson.Gson;
 import com.google.maps.android.SphericalUtil;
 
 import java.io.IOException;
@@ -55,14 +56,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
-    private static final int STORE_RADIUS=6500;
+    private static final int STORE_RADIUS=100000;
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
     private ArrayList<String> storeUrlList;
+    private ArrayList<Marker> markerList;
     private String storePictureUrl;
     private Boolean isConnected;
+
+    Circle circle;
+
     EditText seachEditText;
     ImageView userLocationimage;
     LatLngBounds.Builder latLngBuilder;
@@ -156,7 +161,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                         userMarkerLocation = new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude());
 
-
+                     // circle.remove();// remove the previous user position circle radius
                        moveCamera(userMarkerLocation,DEFAULT_ZOOM);
                        //find close shops
                        dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
@@ -245,7 +250,7 @@ private void geolocate(){
     }
 
     public void dataFromServer(double lat, double lon){
-
+            markerList = new ArrayList<>();
         GetDataService service = DataClientInstance.getRetrofitDataInstance().create(GetDataService.class);
         Call<FormatedData> callList = service.getNearbyStores(lat,lon);
         if(isNetworkConnected()) {
@@ -260,8 +265,8 @@ private void geolocate(){
                     setStoreList(stores);
 
                     for (Results store : stores) {
-//                        Gson gson = new Gson();
-//                        String markerStoreInfoString = gson.toJson(store);
+                        Gson gson = new Gson();
+                        String markerStoreInfoString = gson.toJson(store);
 
                        LatLng markerLocation = new LatLng(store.getLatToDouble(), store.getLonToDouble());
 
@@ -269,16 +274,17 @@ private void geolocate(){
                         Marker marker = map.addMarker(new MarkerOptions()
                                 .position(markerLocation)
                                 .title(store.getName())
-                                .snippet(store.getId().toString())
+                  //              .snippet(store.getId().toString())
+                                .snippet(markerStoreInfoString)
                                 .visible(false)//they will be visible on a specific radius
                         );
-                       mapBounds(userMarkerLocation,marker);
+                       userMapBounds(userMarkerLocation,marker);
 
                         storePictureUrl = DataClientInstance.getImageBaseUrl() + store.getId().toString() + store.getImage_url();
 
                     }
                     map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this, getStoreList()));
-
+                    createMarkersOnBounds(userMarkerLocation,markerList);
                 }
 
                 @Override
@@ -289,18 +295,64 @@ private void geolocate(){
         }
     }
 
-    public void mapBounds(LatLng userPos,Marker marker) {
-        //Draw your circle
-        Circle circle = map.addCircle(new CircleOptions()
-                .center(userPos)
-                .radius(STORE_RADIUS)
-                .strokeColor(Color.rgb(226, 27, 96))
-                .fillColor(Color.argb(22, 225,224 , 215)));
+    public void userMapBounds(LatLng userPos, Marker marker) {
+        markerList.add(marker);
 
-        if (SphericalUtil.computeDistanceBetween(userPos,marker.getPosition()) < STORE_RADIUS) {
-            marker.setVisible(true);
-        }
     }
+    public void createMarkersOnBounds(LatLng userPos, ArrayList<Marker> marker){
+        float maxDistanceFromUser=0f;
+        Marker mostDistantMarkerFromUser;
+        ArrayList<Marker> closeMarkerList = new ArrayList<>();
+        float[] distance =new float[1];
+        //float[] distanceInsideRadius =new float[1];
+        //float distance = 0f;
+        //float distanceInsideRadius=0f;
+        int i=0;
+        for (Marker m:markerList) {
+//
+//             Location.distanceBetween(userPos.latitude, userPos.longitude, m.getPosition().latitude, m.getPosition().latitude, distance);
+//            if ( distance[0] < STORE_RADIUS) {//to find the markers inside radius
+//                  closeMarkerList.add(m);
+//            }
+            if (SphericalUtil.computeDistanceBetween(userPos,m.getPosition()) < STORE_RADIUS) {
+                closeMarkerList.add(m);
+            }
+            }
+//        }for(Marker closeM:closeMarkerList){
+//             Location.distanceBetween(userPos.latitude, userPos.longitude, closeM.getPosition().latitude, closeM.getPosition().latitude, distanceInsideRadius);
+//           if(distanceInsideRadius[0] >= maxDistanceFromUser){//to find most distant marker from user(inside radius)
+//               maxDistanceFromUser=distanceInsideRadius[0];
+//           }i++;
+//        } mostDistantMarkerFromUser = marker.get(i);
+
+
+
+      //  if (SphericalUtil.computeDistanceBetween(userPos,mostDistantMarkerFromUser.getPosition()) < STORE_RADIUS) {
+            //Toast.makeText(this, "Found"+, Toast.LENGTH_SHORT).show();
+if(closeMarkerList.size()>0) {
+    Toast.makeText(this, "We found: "+closeMarkerList.size()+" stores close to your location", Toast.LENGTH_SHORT).show();
+    circle = map.addCircle(new CircleOptions()
+            .center(userPos)
+            .radius(STORE_RADIUS)
+            .strokeColor(Color.rgb(226, 27, 96))
+            .fillColor(Color.argb(22, 225, 224, 215)));
+}else{
+    Toast.makeText(this, "No store is close to your location", Toast.LENGTH_SHORT).show();
+
+    circle = map.addCircle(new CircleOptions()
+            .center(userPos)
+            .radius(STORE_RADIUS)
+            .strokeColor(Color.rgb(226, 27, 96))
+            .fillColor(Color.argb(22, 225, 224, 215)));
+}
+           //reveal close markers
+            for (Marker m:closeMarkerList) {
+                m.setVisible(true);
+            }
+        //}
+
+    }
+
     public void generateMapPoints(List<FormatedData> storeList){
         Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList.toString());
 

@@ -37,19 +37,19 @@ private final View window;
         storeTitle.setText(title);
 
 
-       // Gson gson = new Gson();
+        Gson gson = new Gson();
 
-        //Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
-        String markerIdToString = marker.getSnippet();
-        int markerId =Integer.parseInt(markerIdToString);
-        for(Results listId:storeList){
-            if(listId.getId()==markerId){
-              
-            }
-        }
+        Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
+//        String markerIdToString = marker.getSnippet();
+//        int markerId =Integer.parseInt(markerIdToString);
+//        for(Results listId:storeList){
+//            if(listId.getId()==markerId){
+//
+//            }
+//        }
 
-
-
+          storeAddress = storeObject.getAddress() ;
+          storeImageUrl = storeObject.getImage_url();
         TextView storeAdress = (TextView)view.findViewById(R.id.store_address);
         storeAdress.setText(storeAddress);
 
