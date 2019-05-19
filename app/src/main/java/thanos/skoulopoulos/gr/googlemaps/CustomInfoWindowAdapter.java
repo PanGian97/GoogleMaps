@@ -51,10 +51,10 @@ private final View window;
             }
         }
 
-        TextView storeAddress = (TextView)view.findViewById(R.id.store_address);
+        TextView storeAdress = (TextView)view.findViewById(R.id.store_address);
         ImageView storeImg = (ImageView)view.findViewById(R.id.store_img);
 
-        storeAddress.setText(this.storeAddress);
+        storeAdress.setText(storeAddress);
         Picasso.with(this.context)
                 .load(storeImageUrl)
                 .resize(150,75)
@@ -66,6 +66,7 @@ private final View window;
                             public void onSuccess() {
                                 Log.d(TAG, "onSuccess: **********Image load succeed");
                                 Toast.makeText(context, "Loaded", Toast.LENGTH_SHORT).show();
+
                             }
 
                             @Override
