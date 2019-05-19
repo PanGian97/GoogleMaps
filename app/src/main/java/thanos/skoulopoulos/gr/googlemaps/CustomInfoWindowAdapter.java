@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
@@ -37,29 +38,23 @@ private final View window;
         storeTitle.setText(title);
 
 
-        Gson gson = new Gson();
-
-        Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
-//        String markerIdToString = marker.getSnippet();
-//        int markerId =Integer.parseInt(markerIdToString);
-//        for(Results listId:storeList){
-//            if(listId.getId()==markerId){
+//        Gson gson = new Gson();
 //
-//            }
-//        }
+//        Results storeObject = gson.fromJson(marker.getSnippet(),Results.class);
+        String markerIdToString = marker.getSnippet();
+        int markerId =Integer.parseInt(markerIdToString);
+        for(Results res:storeList){
+            if(res.getId().equals(markerId)){
+               storeAddress = res.getAddress();
+               storeImageUrl = res.getCompleteImage_url();
 
-          storeAddress = storeObject.getAddress() ;
-          storeImageUrl = storeObject.getImage_url();
-        TextView storeAdress = (TextView)view.findViewById(R.id.store_address);
-        storeAdress.setText(storeAddress);
+            }
+        }
 
+        TextView storeAddress = (TextView)view.findViewById(R.id.store_address);
         ImageView storeImg = (ImageView)view.findViewById(R.id.store_img);
 
-//       Picasso.with(this.context)
-//               .load(storeImageUrl)
-//               .resize(150,75)
-//               .error(context.getResources().getDrawable(R.drawable.store))
-//               .into(storeImg);
+        storeAddress.setText(this.storeAddress);
         Picasso.with(this.context)
                 .load(storeImageUrl)
                 .resize(150,75)
@@ -70,15 +65,16 @@ private final View window;
                             @Override
                             public void onSuccess() {
                                 Log.d(TAG, "onSuccess: **********Image load succeed");
+                                Toast.makeText(context, "Loaded", Toast.LENGTH_SHORT).show();
                             }
 
                             @Override
                             public void onError() {
                                 Log.d(TAG, "onError: ************Image load failed");
+                                Toast.makeText(context, "Failed to load image ", Toast.LENGTH_SHORT).show();
                             }
                         });
 
-                        Log.d(TAG, "renderWindowText: image url======== " + storeImageUrl);
 
     }
     @Override

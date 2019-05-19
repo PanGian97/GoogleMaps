@@ -56,15 +56,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
-    private static final int STORE_RADIUS=100000;
+    private static final int STORE_RADIUS=1000000;
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
-    private ArrayList<String> storeUrlList;
     private ArrayList<Marker> markerList;
-    private String storePictureUrl;
-    private Boolean isConnected;
+
 
     Circle circle;
 
@@ -265,8 +263,8 @@ private void geolocate(){
                     setStoreList(stores);
 
                     for (Results store : stores) {
-                        Gson gson = new Gson();
-                        String markerStoreInfoString = gson.toJson(store);
+//                        Gson gson = new Gson();
+//                        String markerStoreInfoString = gson.toJson(store);
 
                        LatLng markerLocation = new LatLng(store.getLatToDouble(), store.getLonToDouble());
 
@@ -274,13 +272,12 @@ private void geolocate(){
                         Marker marker = map.addMarker(new MarkerOptions()
                                 .position(markerLocation)
                                 .title(store.getName())
-                  //              .snippet(store.getId().toString())
-                                .snippet(markerStoreInfoString)
+                               .snippet(store.getId().toString())
+                            //    .snippet(markerStoreInfoString)
                                 .visible(false)//they will be visible on a specific radius
                         );
                        userMapBounds(userMarkerLocation,marker);
 
-                        storePictureUrl = DataClientInstance.getImageBaseUrl() + store.getId().toString() + store.getImage_url();
 
                     }
                     map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this, getStoreList()));

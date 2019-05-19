@@ -109,7 +109,10 @@ public class Results
     {
         return image_url;
     }
-
+    public String getCompleteImage_url ()
+    {
+       return DataClientInstance.getImageBaseUrl() + getId().toString() + getImage_url();
+    }
     public String getFullImage_url ()
     {
 
