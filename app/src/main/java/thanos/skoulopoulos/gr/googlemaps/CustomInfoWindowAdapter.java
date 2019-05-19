@@ -32,7 +32,7 @@ private final View window;
 
     }
 
-    private void renderWindowText(Marker marker,View view){
+    private void renderWindowText(final Marker marker, View view){
         String title = marker.getTitle();
         TextView storeTitle = (TextView)view.findViewById(R.id.store_title);
         storeTitle.setText(title);
@@ -55,29 +55,19 @@ private final View window;
         ImageView storeImg = (ImageView)view.findViewById(R.id.store_img);
 
         storeAdress.setText(storeAddress);
-        Picasso.with(this.context)
-                .load(storeImageUrl)
-                .resize(150,75)
-                .placeholder(R.drawable.store)
-                .error(R.drawable.store)
-                .resize(150, 75)
-                .into(storeImg, new Callback() {
-                            @Override
-                            public void onSuccess() {
-                                Log.d(TAG, "onSuccess: **********Image load succeed");
-                                Toast.makeText(context, "Loaded", Toast.LENGTH_SHORT).show();
+        if(storeImageUrl!=null) {
+            Picasso.with(this.context)
+                    .load(storeImageUrl)
+                    .resize(150, 75)
+                    .placeholder(R.drawable.store)
+                    .error(R.drawable.store)
+                    .resize(150, 75)
+                    .into(storeImg, new MarkerCallback(marker,context));
 
-                            }
-
-                            @Override
-                            public void onError() {
-                                Log.d(TAG, "onError: ************Image load failed");
-                                Toast.makeText(context, "Failed to load image ", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-
+        }
 
     }
+
     @Override
     public View getInfoWindow(Marker marker) {
         renderWindowText(marker,window);
