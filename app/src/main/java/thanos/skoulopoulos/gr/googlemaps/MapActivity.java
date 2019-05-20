@@ -18,8 +18,10 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,7 +41,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.gson.Gson;
 import com.google.maps.android.SphericalUtil;
 
 import java.io.IOException;
@@ -56,21 +57,24 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final float DEFAULT_ZOOM = 15f;
-    private static final int STORE_RADIUS=1000000;
+    private static final int STORE_RADIUS=1000;
+    private static final int MAX_STORE_RADIUS = 300000;
+    private int storeAbjRadius = 1000;
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
     private ArrayList<Marker> markerList;
 
-
+    SeekBar borderBar;
+    Button setBorderBtn;
     Circle circle;
-
+    CircleOptions circleOptions;
     EditText seachEditText;
     ImageView userLocationimage;
     LatLngBounds.Builder latLngBuilder;
     LatLng userMarkerLocation;
-    CameraUpdate cameraUpdate;
+    Location currentLocation;
     private ArrayList<Results> storeList;
 
 
@@ -94,6 +98,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             userLocationimage = (ImageView)findViewById(R.id.imageView);
             initUserLocation();
             initSeachBar();
+            abjustBorderBar();
 
 
         }
@@ -155,7 +160,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                   public void onComplete(@NonNull Task task) {
                    if(task.isSuccessful()){
                        Log.d(TAG, "onComplete: Found current location!");
-                       Location currentLocation =  (Location) task.getResult();
+                       currentLocation =  (Location) task.getResult();
 
                         userMarkerLocation = new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude());
 
@@ -180,7 +185,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         private void moveCamera(LatLng latLng, float zoom){
             Log.d(TAG, "moveCamera: Moving the camera to lat "+latLng.latitude+
                     " lng "+latLng.longitude);
+            Toast.makeText(this, "zooooom "+zoom, Toast.LENGTH_SHORT).show();
            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoom));
+
 
         }
 private void initMap() {
@@ -263,8 +270,7 @@ private void geolocate(){
                     setStoreList(stores);
 
                     for (Results store : stores) {
-//                        Gson gson = new Gson();
-//                        String markerStoreInfoString = gson.toJson(store);
+//
 
                        LatLng markerLocation = new LatLng(store.getLatToDouble(), store.getLonToDouble());
 
@@ -282,6 +288,9 @@ private void geolocate(){
                     }
                     map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this, getStoreList()));
                     createMarkersOnBounds(userMarkerLocation,markerList);
+
+
+
                 }
 
                 @Override
@@ -296,64 +305,103 @@ private void geolocate(){
         markerList.add(marker);
 
     }
+    public void abjustBorderBar(){
+        borderBar = (SeekBar)findViewById(R.id.seekBar);
+        borderBar.setProgress(STORE_RADIUS);
+        borderBar.incrementProgressBy(1000);
+        borderBar.setMax(MAX_STORE_RADIUS);
+
+        borderBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                storeAbjRadius = progress;
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+                dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());
+
+            }
+        });
+
+
+    }
+
     public void createMarkersOnBounds(LatLng userPos, ArrayList<Marker> marker){
-        float maxDistanceFromUser=0f;
-        Marker mostDistantMarkerFromUser;
+
         ArrayList<Marker> closeMarkerList = new ArrayList<>();
-        float[] distance =new float[1];
-        //float[] distanceInsideRadius =new float[1];
-        //float distance = 0f;
-        //float distanceInsideRadius=0f;
-        int i=0;
+
         for (Marker m:markerList) {
-//
-//             Location.distanceBetween(userPos.latitude, userPos.longitude, m.getPosition().latitude, m.getPosition().latitude, distance);
-//            if ( distance[0] < STORE_RADIUS) {//to find the markers inside radius
-//                  closeMarkerList.add(m);
-//            }
-            if (SphericalUtil.computeDistanceBetween(userPos,m.getPosition()) < STORE_RADIUS) {
+
+            if (SphericalUtil.computeDistanceBetween(userPos,m.getPosition()) < storeAbjRadius) {
                 closeMarkerList.add(m);
             }
             }
-//        }for(Marker closeM:closeMarkerList){
-//             Location.distanceBetween(userPos.latitude, userPos.longitude, closeM.getPosition().latitude, closeM.getPosition().latitude, distanceInsideRadius);
-//           if(distanceInsideRadius[0] >= maxDistanceFromUser){//to find most distant marker from user(inside radius)
-//               maxDistanceFromUser=distanceInsideRadius[0];
-//           }i++;
-//        } mostDistantMarkerFromUser = marker.get(i);
 
-
-
-      //  if (SphericalUtil.computeDistanceBetween(userPos,mostDistantMarkerFromUser.getPosition()) < STORE_RADIUS) {
-            //Toast.makeText(this, "Found"+, Toast.LENGTH_SHORT).show();
 if(closeMarkerList.size()>0) {
+   if(circle !=null) circle.remove();//delete previus circle radius
+
     Toast.makeText(this, "We found: "+closeMarkerList.size()+" stores close to your location", Toast.LENGTH_SHORT).show();
-    circle = map.addCircle(new CircleOptions()
-            .center(userPos)
-            .radius(STORE_RADIUS)
+
+
+    circle = map.addCircle( new CircleOptions()
+    .center(userMarkerLocation)
+            .radius(storeAbjRadius)
             .strokeColor(Color.rgb(226, 27, 96))
-            .fillColor(Color.argb(22, 225, 224, 215)));
+            .fillColor(Color.argb( 22,225, 224, 215)));
+    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+            circle .getCenter(), getZoomLevel(circle)));
+
+    //reveal close markers
+    for (Marker m:closeMarkerList) {
+        m.setVisible(true);
+    }
+
 }else{
     Toast.makeText(this, "No store is close to your location", Toast.LENGTH_SHORT).show();
+ if(circle!=null) circle.remove(); //delete previus circle radius
 
     circle = map.addCircle(new CircleOptions()
-            .center(userPos)
-            .radius(STORE_RADIUS)
-            .strokeColor(Color.rgb(226, 27, 96))
-            .fillColor(Color.argb(22, 225, 224, 215)));
+            .center(userMarkerLocation)
+            .radius(storeAbjRadius)
+            .strokeColor(Color.rgb(22, 27, 96))
+            .fillColor(Color.argb( 70,225, 224, 215)));
+    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+            circle.getCenter(), getZoomLevel(circle)));
+
+    //hide  markers
+    for (Marker m:closeMarkerList) {
+        m.setVisible(false);
+    }
+
 }
-           //reveal close markers
-            for (Marker m:closeMarkerList) {
-                m.setVisible(true);
-            }
-        //}
+
+
 
     }
 
-    public void generateMapPoints(List<FormatedData> storeList){
-        Log.d(TAG, "generateMapPoints: MAP POINTS:---> "+storeList.toString());
 
+
+
+
+    public float getZoomLevel(Circle circle) {
+       float zoomLevel = DEFAULT_ZOOM;
+        if (circle != null) {
+            double radius = circle.getRadius() + circle.getRadius() / 2;
+            double scale = radius / 500;
+            zoomLevel = (float) (16 - Math.log(scale) / Math.log(2));
+        }
+        return zoomLevel;
     }
+
+
     public void hideSoftKeyboard(){
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
