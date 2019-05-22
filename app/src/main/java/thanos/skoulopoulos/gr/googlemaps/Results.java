@@ -202,4 +202,8 @@ public class Results
         return "ClassPojo [site = "+site+", address = "+address+", distance = "+distance+", is_open = "+is_open+", street = "+street+", image_url = "+image_url+", name = "+name+", is_fav = "+is_fav+", tel = "+tel+", lon = "+lon+", id = "+id+", lat = "+lat+"]";
     }
 
+    public String getWebsite_url() {
+        String sampleUrl="https://www.gregorys.gr/";
+        return sampleUrl;
+    }
 }

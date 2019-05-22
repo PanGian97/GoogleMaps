@@ -1,13 +1,17 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
+import android.net.Uri;
+import android.opengl.Visibility;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -27,7 +31,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 //import com.google.android.gms.maps.OnMapReadyCallback;
@@ -36,12 +39,17 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.PendingResult;
 import com.google.maps.android.SphericalUtil;
+import com.google.maps.model.DirectionsResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,20 +73,25 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
     private ArrayList<Marker> markerList;
-
+    private ArrayList<Marker> closeMarkerList;
+   private String websiteUrl;
+   private GeoApiContext geoApiContext;
     SeekBar borderBar;
     Button setBorderBtn;
     Circle circle;
     CircleOptions circleOptions;
     EditText seachEditText;
     ImageView userLocationimage;
+
+    Button btnWebsite;
     LatLngBounds.Builder latLngBuilder;
     LatLng userMarkerLocation;
     Location currentLocation;
     private ArrayList<Results> storeList;
+    private static final int COLOR_R_NO_MARKERS = 22;
+    private static final int COLOR_R_MARKERS = 226;
+  CustomInfoWindowAdapter customInfoWindowAdapter;
 
-
-    //private FusedLocationProviderClient fusedLocationProviderClient;
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
@@ -103,6 +116,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         }
     }
+public void showInfoButtons(final String websiteUrl){
+        this.websiteUrl = websiteUrl;
+
+btnWebsite.setVisibility(View.VISIBLE);
+
+    btnWebsite.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl));
+            startActivity(browserIntent);
+        }
+    });
+}
 
     private void initUserLocation() {
         userLocationimage.setOnClickListener(new View.OnClickListener() {
@@ -118,11 +144,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+         btnWebsite = (Button)findViewById(R.id.button_website);
+
+         btnWebsite.setVisibility(View.GONE);
         getLocationPermission();
 
-
-
     }
+
+
     private void getLocationPermission(){
         String[] permissions = {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -185,7 +214,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         private void moveCamera(LatLng latLng, float zoom){
             Log.d(TAG, "moveCamera: Moving the camera to lat "+latLng.latitude+
                     " lng "+latLng.longitude);
-            Toast.makeText(this, "zooooom "+zoom, Toast.LENGTH_SHORT).show();
            map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,zoom));
 
 
@@ -198,6 +226,11 @@ private void initMap() {
     }
     else{
         Log.d(TAG, "initMap: No internet access");
+    }
+    if(geoApiContext == null){
+        geoApiContext = new GeoApiContext.Builder()// use it to calculate directions
+                .apiKey(getString(R.string.api_key_string))
+                .build();
     }
 }
 private void initSeachBar(){
@@ -264,6 +297,9 @@ private void geolocate(){
                 public void onResponse(Call<FormatedData> call, Response<FormatedData> response) {
                     // generateMapPoints(response.body());
                     FormatedData formatedData = response.body();
+
+                    map.clear();//clear previus all markers
+
                     stores = formatedData.getResults();
                     Log.d(TAG, "onResponse: MAP_POINTS------->  " + stores.get(0).toString());
 
@@ -286,9 +322,10 @@ private void geolocate(){
 
 
                     }
-                    map.setInfoWindowAdapter(new CustomInfoWindowAdapter(MapActivity.this, getStoreList()));
+                    map.setInfoWindowAdapter(customInfoWindowAdapter = new CustomInfoWindowAdapter(MapActivity.this,MapActivity.this, getStoreList()));
+                    map.setOnInfoWindowClickListener(customInfoWindowAdapter.onInfoWindowClickListener);
+                    map.setOnInfoWindowCloseListener(customInfoWindowAdapter.onInfoWindowCloseListener);
                     createMarkersOnBounds(userMarkerLocation,markerList);
-
 
 
                 }
@@ -336,13 +373,14 @@ private void geolocate(){
 
     public void createMarkersOnBounds(LatLng userPos, ArrayList<Marker> marker){
 
-        ArrayList<Marker> closeMarkerList = new ArrayList<>();
+        closeMarkerList = new ArrayList<>();
 
         for (Marker m:markerList) {
 
             if (SphericalUtil.computeDistanceBetween(userPos,m.getPosition()) < storeAbjRadius) {
                 closeMarkerList.add(m);
             }
+
             }
 
 if(closeMarkerList.size()>0) {
@@ -351,44 +389,34 @@ if(closeMarkerList.size()>0) {
     Toast.makeText(this, "We found: "+closeMarkerList.size()+" stores close to your location", Toast.LENGTH_SHORT).show();
 
 
-    circle = map.addCircle( new CircleOptions()
-    .center(userMarkerLocation)
-            .radius(storeAbjRadius)
-            .strokeColor(Color.rgb(226, 27, 96))
-            .fillColor(Color.argb( 22,225, 224, 215)));
-    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-            circle .getCenter(), getZoomLevel(circle)));
+  circleCreator(COLOR_R_MARKERS);
 
-    //reveal close markers
     for (Marker m:closeMarkerList) {
         m.setVisible(true);
+
+
     }
 
 }else{
     Toast.makeText(this, "No store is close to your location", Toast.LENGTH_SHORT).show();
  if(circle!=null) circle.remove(); //delete previus circle radius
 
-    circle = map.addCircle(new CircleOptions()
-            .center(userMarkerLocation)
-            .radius(storeAbjRadius)
-            .strokeColor(Color.rgb(22, 27, 96))
-            .fillColor(Color.argb( 70,225, 224, 215)));
-    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
-            circle.getCenter(), getZoomLevel(circle)));
+      circleCreator(COLOR_R_NO_MARKERS);
 
-    //hide  markers
-    for (Marker m:closeMarkerList) {
-        m.setVisible(false);
-    }
 
 }
 
-
-
     }
 
-
-
+public void circleCreator(int rColor){
+    circle = map.addCircle(new CircleOptions()
+            .center(userMarkerLocation)
+            .radius(storeAbjRadius)
+            .strokeColor(Color.rgb(rColor, 27, 96))
+            .fillColor(Color.argb( 70,225, 224, 215)));
+    map.animateCamera(CameraUpdateFactory.newLatLngZoom(
+            circle.getCenter(), getZoomLevel(circle)));
+}
 
 
     public float getZoomLevel(Circle circle) {
@@ -399,6 +427,36 @@ if(closeMarkerList.size()>0) {
             zoomLevel = (float) (16 - Math.log(scale) / Math.log(2));
         }
         return zoomLevel;
+    }
+
+    public void calculateDirections(Marker marker){
+        Log.d(TAG, "calculateDirections: calculating directions.");
+
+        com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
+                marker.getPosition().latitude,
+                marker.getPosition().longitude
+        );
+        DirectionsApiRequest directions = new DirectionsApiRequest(geoApiContext);
+
+        directions.alternatives(true);
+        directions.origin(
+                new com.google.maps.model.LatLng(currentLocation.getLatitude(),currentLocation.getLongitude()
+                ));
+        Log.d(TAG, "calculateDirections: destination: " + destination.toString());
+        directions.destination(destination).setCallback(new PendingResult.Callback<DirectionsResult>() {//triggered when request is completed
+            @Override
+            public void onResult(DirectionsResult result) {
+                Log.d(TAG, "calculateDirections: routes: " + result.routes[0].toString());
+                Log.d(TAG, "calculateDirections: duration: " + result.routes[0].legs[0].duration);
+                Log.d(TAG, "calculateDirections: distance: " + result.routes[0].legs[0].distance);
+                Log.d(TAG, "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString());
+            }
+
+            @Override
+            public void onFailure(Throwable e) {
+
+            }
+        });
     }
 
 
@@ -412,6 +470,10 @@ if(closeMarkerList.size()>0) {
 
     public void setStoreList(ArrayList<Results> storeList) {
         this.storeList = storeList;
+    }
+
+    public void hideInfoButtons() {
+        btnWebsite.setVisibility(View.GONE);
     }
 }
 
