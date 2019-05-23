@@ -12,6 +12,8 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.opengl.Visibility;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -42,6 +44,8 @@ import com.google.android.gms.maps.model.LatLng;
 
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -49,7 +53,9 @@ import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.PendingResult;
 import com.google.maps.android.SphericalUtil;
+import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.DirectionsRoute;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +65,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
+
     private static final String TAG = "MapActivity";
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -91,6 +98,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final int COLOR_R_NO_MARKERS = 22;
     private static final int COLOR_R_MARKERS = 226;
   CustomInfoWindowAdapter customInfoWindowAdapter;
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -325,6 +333,7 @@ private void geolocate(){
                     map.setInfoWindowAdapter(customInfoWindowAdapter = new CustomInfoWindowAdapter(MapActivity.this,MapActivity.this, getStoreList()));
                     map.setOnInfoWindowClickListener(customInfoWindowAdapter.onInfoWindowClickListener);
                     map.setOnInfoWindowCloseListener(customInfoWindowAdapter.onInfoWindowCloseListener);
+                    map.setOnPolylineClickListener(MapActivity.this::onPolylineClick);
                     createMarkersOnBounds(userMarkerLocation,markerList);
 
 
@@ -450,15 +459,45 @@ public void circleCreator(int rColor){
                 Log.d(TAG, "calculateDirections: duration: " + result.routes[0].legs[0].duration);
                 Log.d(TAG, "calculateDirections: distance: " + result.routes[0].legs[0].distance);
                 Log.d(TAG, "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString());
+                addPolylinesToMap(result);
             }
 
             @Override
             public void onFailure(Throwable e) {
-
+                Log.d(TAG, "onFailure: Failed to calculate directions"+e);
             }
         });
     }
+    private void addPolylinesToMap(final DirectionsResult result){//called automatically from calculateDirections
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "run: result routes: " + result.routes.length);
 
+                for(DirectionsRoute route: result.routes){
+                    Log.d(TAG, "run: leg: " + route.legs[0].toString());
+                    List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
+
+                    List<LatLng> newDecodedPath = new ArrayList<>();
+
+                    // This loops through all the LatLng coordinates of ONE polyline.
+                    for(com.google.maps.model.LatLng latLng: decodedPath){
+
+//                        Log.d(TAG, "run: latlng: " + latLng.toString());
+
+                        newDecodedPath.add(new LatLng(
+                                latLng.lat,
+                                latLng.lng
+                        ));
+                    }
+                    Polyline polyline = map.addPolyline(new PolylineOptions().addAll(newDecodedPath));
+                    polyline.setColor(ContextCompat.getColor(MapActivity.this, R.color.colorPrimaryDark));
+                    polyline.setClickable(true);
+
+                }
+            }
+        });
+    }
 
     public void hideSoftKeyboard(){
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
@@ -474,6 +513,12 @@ public void circleCreator(int rColor){
 
     public void hideInfoButtons() {
         btnWebsite.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onPolylineClick(Polyline polyline) {
+    polyline.setColor(R.color.colorAccent);
+    polyline.setZIndex(1);//where this polyline will sit with respect to other polylines
     }
 }
 
