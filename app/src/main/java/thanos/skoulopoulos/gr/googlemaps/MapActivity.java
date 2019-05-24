@@ -87,13 +87,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     String selectedMarkerIdHolder=" ";
    private GeoApiContext geoApiContext;
     SeekBar borderBar;
-    Button btnFindRoute;
+
     Circle circle;
     CircleOptions circleOptions;
     EditText seachEditText;
     ImageView userLocationimage;
-
+    TextView txtRouteMode;
     Button btnWebsite;
+    Button btnCancelRoute;
+    Button btnFindRoute;
     LatLngBounds.Builder latLngBuilder;
     LatLng userMarkerLocation;
     Location currentLocation;
@@ -169,8 +171,10 @@ btnFindRoute.setVisibility(View.VISIBLE);
         setContentView(R.layout.activity_map);
          btnWebsite = (Button)findViewById(R.id.button_website);
          btnFindRoute = (Button)findViewById(R.id.button_find_route);
+         btnCancelRoute = (Button)findViewById(R.id.button_route_mode);
          btnWebsite.setVisibility(View.GONE);
          btnFindRoute.setVisibility(View.GONE);
+         txtRouteMode  =(TextView)findViewById(R.id.txt_route_mode);
         getLocationPermission();
 
     }
@@ -526,9 +530,29 @@ public void circleCreator(int rColor){
                     double routeDuration = route.legs[0].duration.inSeconds;
                     if(routeDuration<minDuration){minDuration = routeDuration;
                         onPolylineClick(polyline);}// it clicks all the polylines but lst the one with the least trip duration
+                        zoomRoute(polyline.getPoints());//zoom around the bounds of polyline points
+                       routeMode();
                 }
             }
         });
+    }
+
+    private void routeMode() {
+        //during route mode no store can be selected and the store radious is static;
+        borderBar.setEnabled(false);
+            btnCancelRoute.setVisibility(View.VISIBLE);
+            txtRouteMode.setVisibility(View.VISIBLE);
+
+            btnCancelRoute.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    borderBar.setEnabled(true);
+                    btnCancelRoute.setVisibility(View.GONE);
+                    txtRouteMode.setVisibility(View.GONE);
+                    dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());//reset the map
+                }
+            });
+
     }
 
     public void hideSoftKeyboard(){
@@ -551,7 +575,23 @@ public void circleCreator(int rColor){
     }
 
 
+public void zoomRoute(List<LatLng> latLngRouteList){
+//case there is no route
+        if(latLngRouteList==null)return;
+//creating bounds
+    LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+    for (LatLng latLngPoint : latLngRouteList)
+        boundsBuilder.include(latLngPoint);
+//creating the view
+    int routePadding = 120;
+    LatLngBounds latLngRouteBounds = boundsBuilder.build();
 
+    map.animateCamera(
+            CameraUpdateFactory.newLatLngBounds(latLngRouteBounds, routePadding),
+            600,
+            null
+    );
+}
 
     @Override
     public void onPolylineClick(Polyline polyline) {
