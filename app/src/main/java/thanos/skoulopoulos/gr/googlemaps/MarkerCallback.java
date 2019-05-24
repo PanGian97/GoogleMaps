@@ -29,6 +29,7 @@ public class MarkerCallback implements Callback {
         if (marker != null && marker.isInfoWindowShown()) {//to refresh infoWindow
             marker.hideInfoWindow();
             marker.showInfoWindow();
+
         }
       //  Toast.makeText(context, "Loaded", Toast.LENGTH_SHORT).show();
     }

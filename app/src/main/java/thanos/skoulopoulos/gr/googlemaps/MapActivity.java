@@ -56,6 +56,7 @@ import com.google.maps.android.SphericalUtil;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
+import com.google.maps.model.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener,GoogleMap.OnMarkerClickListener {
 
     private static final String TAG = "MapActivity";
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -81,10 +82,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private ArrayList<Results> stores;
     private ArrayList<Marker> markerList;
     private ArrayList<Marker> closeMarkerList;
+    private ArrayList<PolylineData> polylineData = new ArrayList<>();
    private String websiteUrl;
+    String selectedMarkerIdHolder=" ";
    private GeoApiContext geoApiContext;
     SeekBar borderBar;
-    Button setBorderBtn;
+    Button btnFindRoute;
     Circle circle;
     CircleOptions circleOptions;
     EditText seachEditText;
@@ -98,6 +101,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final int COLOR_R_NO_MARKERS = 22;
     private static final int COLOR_R_MARKERS = 226;
   CustomInfoWindowAdapter customInfoWindowAdapter;
+    Polyline polyline;
 
 
     @Override
@@ -122,18 +126,29 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             abjustBorderBar();
 
 
+
         }
     }
-public void showInfoButtons(final String websiteUrl){
+public void showInfoButtons(final String websiteUrl,Marker marker){
         this.websiteUrl = websiteUrl;
 
 btnWebsite.setVisibility(View.VISIBLE);
-
+btnFindRoute.setVisibility(View.VISIBLE);
     btnWebsite.setOnClickListener(new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl));
             startActivity(browserIntent);
+        }
+    });
+    btnFindRoute.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+
+           if(!selectedMarkerIdHolder.equals(marker.getId())) calculateDirections(marker);//check if it already pressed
+            selectedMarkerIdHolder= marker.getId();
+            marker.hideInfoWindow();
+
         }
     });
 }
@@ -153,8 +168,9 @@ btnWebsite.setVisibility(View.VISIBLE);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
          btnWebsite = (Button)findViewById(R.id.button_website);
-
+         btnFindRoute = (Button)findViewById(R.id.button_find_route);
          btnWebsite.setVisibility(View.GONE);
+         btnFindRoute.setVisibility(View.GONE);
         getLocationPermission();
 
     }
@@ -474,7 +490,19 @@ public void circleCreator(int rColor){
             public void run() {
                 Log.d(TAG, "run: result routes: " + result.routes.length);
 
+                if (polylineData.size() > 0) {//reset everything from other routes
+                    for(PolylineData polData:polylineData){
+                        polData.getPolyline().remove();
+                    }polylineData.clear();
+                }
+                 polylineData = new ArrayList<>();
+
+                double minDuration=999999;
                 for(DirectionsRoute route: result.routes){
+
+
+
+
                     Log.d(TAG, "run: leg: " + route.legs[0].toString());
                     List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
 
@@ -490,10 +518,14 @@ public void circleCreator(int rColor){
                                 latLng.lng
                         ));
                     }
-                    Polyline polyline = map.addPolyline(new PolylineOptions().addAll(newDecodedPath));
+                     polyline = map.addPolyline(new PolylineOptions().addAll(newDecodedPath));
                     polyline.setColor(ContextCompat.getColor(MapActivity.this, R.color.colorPrimaryDark));
                     polyline.setClickable(true);
+                    polylineData.add(new PolylineData(polyline,route.legs[0]));
 
+                    double routeDuration = route.legs[0].duration.inSeconds;
+                    if(routeDuration<minDuration){minDuration = routeDuration;
+                        onPolylineClick(polyline);}// it clicks all the polylines but lst the one with the least trip duration
                 }
             }
         });
@@ -511,14 +543,51 @@ public void circleCreator(int rColor){
         this.storeList = storeList;
     }
 
-    public void hideInfoButtons() {
+    public void hideInfo() {
         btnWebsite.setVisibility(View.GONE);
+        btnFindRoute.setVisibility(View.GONE);
+
+
     }
+
+
+
 
     @Override
     public void onPolylineClick(Polyline polyline) {
-    polyline.setColor(R.color.colorAccent);
-    polyline.setZIndex(1);//where this polyline will sit with respect to other polylines
+
+        for(PolylineData polylineRoute: polylineData){
+            Log.d(TAG, "onPolylineClick: toString: " + polylineRoute.toString());
+
+            if(polyline.getId().equals(polylineRoute.getPolyline().getId())){
+                polylineRoute.getPolyline().setColor(ContextCompat.getColor(MapActivity.this, R.color.colorAccent));
+                polylineRoute.getPolyline().setZIndex(1);
+
+                LatLng endLocation = new LatLng(
+                        polylineRoute.getLeg().endLocation.lat,polylineRoute.getLeg().endLocation.lng
+                );
+                Marker destMarker = map.addMarker(new MarkerOptions()
+
+                .position(endLocation)
+                        .title("Selected store")
+                        .snippet("Duration: "+polylineRoute.getLeg().duration.toString())
+                );
+                    map.setInfoWindowAdapter(null);//disable to custom adapter
+                  destMarker.showInfoWindow();
+
+            }
+            else{
+                polylineRoute.getPolyline().setColor(ContextCompat.getColor(MapActivity.this, R.color.colorPrimary));
+                polylineRoute.getPolyline().setZIndex(0);
+            }
+        }
+    }
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if(!selectedMarkerIdHolder.equals(marker.getId()))
+        {polyline.remove();}
+
+        return false;
     }
 }
 

@@ -1,8 +1,6 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,10 +23,10 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 private final View window;
     private final ArrayList<Results> storeList;
     private Context context;
-    String storeAddress;
-    String storeImageUrl;
-    String storeWebsiteUrl;
-    LatLng markerPosition;
+    private String storeAddress;
+    private String storeImageUrl;
+    private String storeWebsiteUrl;
+    private LatLng markerPosition;
 
 
     public CustomInfoWindowAdapter(MapActivity mapActivity,Context context, ArrayList<Results> storeList) {//passing object and context
@@ -73,7 +71,7 @@ private final View window;
 
         }
 
-        mapActivity.showInfoButtons(storeWebsiteUrl);
+        mapActivity.showInfoButtons(storeWebsiteUrl,marker);
 
     }
 
@@ -96,7 +94,7 @@ private final View window;
         @Override
         public void onInfoWindowClose(Marker marker) {
             Toast.makeText(mapActivity, "WINDOW CLOSED", Toast.LENGTH_SHORT).show();
-            mapActivity.hideInfoButtons();
+            mapActivity.hideInfo();
         }
     };
 
@@ -104,10 +102,6 @@ private final View window;
        @Override
        public void onInfoWindowClick(Marker marker) {
            Log.d(TAG, "onInfoWindowClick: Info window clicked");
-
-
-                       mapActivity.calculateDirections(marker);
-
 
 
 
