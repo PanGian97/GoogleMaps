@@ -135,7 +135,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="108dp"
+        android:layout_marginBottom="180dp"
         android:shadowColor="#00B94444"
         android:text="@string/route_mode_enabled"
         android:textColor="@color/colorAccent"
@@ -145,6 +145,27 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent" />
+
+
+    <android.support.constraint.Guideline
+        android:id="@+id/guideline6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="495dp" />
+
+    <fragment
+        android:id="@+id/store_dtl_frag"
+        android:name="com.appolica.interactiveinfowindow.fragment.MapInfoWindowFragment"
+        android:layout_width="312dp"
+        android:layout_height="124dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline6" />
 
 
 </android.support.constraint.ConstraintLayout>

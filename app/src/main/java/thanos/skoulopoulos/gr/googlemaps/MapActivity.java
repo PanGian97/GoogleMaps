@@ -1,11 +1,15 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -16,6 +20,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -38,6 +44,7 @@ import com.google.android.gms.maps.GoogleMap;
 //import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -61,6 +68,7 @@ import com.google.maps.model.Duration;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -101,7 +109,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Location currentLocation;
     private ArrayList<Results> storeList;
     private static final int COLOR_R_NO_MARKERS = 22;
-    private static final int COLOR_R_MARKERS = 226;
+    private static final int COLOR_R_MARKERS = 201;
   CustomInfoWindowAdapter customInfoWindowAdapter;
     Polyline polyline;
 
@@ -149,7 +157,14 @@ btnFindRoute.setVisibility(View.VISIBLE);
 
            if(!selectedMarkerIdHolder.equals(marker.getId())) calculateDirections(marker);//check if it already pressed
             selectedMarkerIdHolder= marker.getId();
+           // routeStoreDetails(marker);//initialize fragment even it is not instansiated
+            FragmentManager manager =getSupportFragmentManager();
+            StoreDetailsFrag fragment= (StoreDetailsFrag) manager.findFragmentById(R.id.store_dtl_frag);//
+            fragment.assignDataToFragment(MapActivity.this,marker,storeList);
+          //  manager.beginTransaction().replace(R.id.store_dtl_frag,new StoreDetailsFrag()).commit();
+
             marker.hideInfoWindow();
+
 
         }
     });
@@ -341,6 +356,7 @@ private void geolocate(){
 
                         Marker marker = map.addMarker(new MarkerOptions()
                                 .position(markerLocation)
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.store_icon_small))
                                 .title(store.getName())
                                .snippet(store.getId().toString())
                             //    .snippet(markerStoreInfoString)
@@ -441,8 +457,8 @@ public void circleCreator(int rColor){
     circle = map.addCircle(new CircleOptions()
             .center(userMarkerLocation)
             .radius(storeAbjRadius)
-            .strokeColor(Color.rgb(rColor, 27, 96))
-            .fillColor(Color.argb( 70,225, 224, 215)));
+            .strokeColor(Color.rgb(rColor, 24, 6))
+            .fillColor(Color.argb( 100,216, 203, 212)));
     map.animateCamera(CameraUpdateFactory.newLatLngZoom(
             circle.getCenter(), getZoomLevel(circle)));
 }
@@ -543,17 +559,33 @@ public void circleCreator(int rColor){
             btnCancelRoute.setVisibility(View.VISIBLE);
             txtRouteMode.setVisibility(View.VISIBLE);
 
+//        FragmentManager manager =getSupportFragmentManager();
+//       Fragment storeDetailFrag = manager.findFragmentById(R.id.store_dtl_frag);//instantiate fragment into view
+         // manager.beginTransaction().replace(R.id.store_dtl_frag,new StoreDetailsFrag()).commit();
+
             btnCancelRoute.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     borderBar.setEnabled(true);
                     btnCancelRoute.setVisibility(View.GONE);
                     txtRouteMode.setVisibility(View.GONE);
+                   // manager.beginTransaction().remove(storeDetailFrag).commit();//removing fragment from view
                     dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());//reset the map
+
                 }
             });
 
     }
+
+
+//    private void routeStoreDetails(Marker marker) {
+//
+//            StoreDetailsFrag storeDetailsFrag = new StoreDetailsFrag();
+//            storeDetailsFrag.assignDataToFragment(MapActivity.this,marker,getStoreList());
+//
+//        }
+
+
 
     public void hideSoftKeyboard(){
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
