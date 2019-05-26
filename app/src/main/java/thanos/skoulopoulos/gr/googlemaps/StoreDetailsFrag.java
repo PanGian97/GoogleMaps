@@ -37,7 +37,7 @@ public class StoreDetailsFrag extends Fragment {
 
         String storeAddress="" ;
         String storeImageUrl="";
-        String storeWebsiteUrl="" ;
+
 
         String markerIdToString = marker.getSnippet();
         int markerId =Integer.parseInt(markerIdToString);
@@ -46,7 +46,7 @@ public class StoreDetailsFrag extends Fragment {
             if(res.getId().equals(markerId)){
                storeAddress = res.getAddress();
                 storeImageUrl = res.getCompleteImage_url();
-                 storeWebsiteUrl = res.getWebsite_url();
+
 
             }
         }

@@ -22,6 +22,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTabHost;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -112,7 +114,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private static final int COLOR_R_MARKERS = 201;
   CustomInfoWindowAdapter customInfoWindowAdapter;
     Polyline polyline;
-
+    private FragmentTabHost fragHost;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -157,13 +159,19 @@ btnFindRoute.setVisibility(View.VISIBLE);
 
            if(!selectedMarkerIdHolder.equals(marker.getId())) calculateDirections(marker);//check if it already pressed
             selectedMarkerIdHolder= marker.getId();
-           // routeStoreDetails(marker);//initialize fragment even it is not instansiated
-            FragmentManager manager =getSupportFragmentManager();
-            StoreDetailsFrag fragment= (StoreDetailsFrag) manager.findFragmentById(R.id.store_dtl_frag);//
-            fragment.assignDataToFragment(MapActivity.this,marker,storeList);
-          //  manager.beginTransaction().replace(R.id.store_dtl_frag,new StoreDetailsFrag()).commit();
-
             marker.hideInfoWindow();
+            FragmentManager manager =getSupportFragmentManager();
+             StoreDetailsFrag fragment= (StoreDetailsFrag) manager.findFragmentById(R.id.store_dtl_frag);//
+            manager.beginTransaction().replace(R.id.store_dtl_frag,new StoreDetailsFrag()).commit();
+            fragment.assignDataToFragment(MapActivity.this,marker,storeList);
+
+
+//            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+//            Fragment fragment = new Fragment();
+//            ft.replace(R.id.store_dtl_frag, fragment);
+//            ft.commit();
+
+
 
 
         }
@@ -190,6 +198,12 @@ btnFindRoute.setVisibility(View.VISIBLE);
          btnWebsite.setVisibility(View.GONE);
          btnFindRoute.setVisibility(View.GONE);
          txtRouteMode  =(TextView)findViewById(R.id.txt_route_mode);
+
+        fragHost = (FragmentTabHost) findViewById(R.id.frag_holder);
+        fragHost.setup(this, getSupportFragmentManager(), R.id.store_dtl_frag);
+        fragHost.addTab(fragHost.newTabSpec("Info")
+                .setIndicator("Info"), StoreDetailsFrag.class, null);
+
         getLocationPermission();
 
     }
