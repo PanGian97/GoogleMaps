@@ -1,28 +1,20 @@
 package thanos.skoulopoulos.gr.googlemaps;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.Uri;
-import android.opengl.Visibility;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTabHost;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -34,6 +26,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -65,18 +58,16 @@ import com.google.maps.android.SphericalUtil;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
-import com.google.maps.model.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener,GoogleMap.OnMarkerClickListener {
+public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnPolylineClickListener,GoogleMap.OnMarkerClickListener,EventListener {
 
     private static final String TAG = "MapActivity";
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -88,6 +79,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private int storeAbjRadius = 1000;
     private Boolean locationPermsssionGranted = false;
     private GoogleMap map;
+    private Marker marker;
     private FusedLocationProviderClient fusedLocationProviderClient;
     private ArrayList<Results> stores;
     private ArrayList<Marker> markerList;
@@ -106,15 +98,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     Button btnWebsite;
     Button btnCancelRoute;
     Button btnFindRoute;
+    Button btnAttach;
     LatLngBounds.Builder latLngBuilder;
     LatLng userMarkerLocation;
     Location currentLocation;
     private ArrayList<Results> storeList;
     private static final int COLOR_R_NO_MARKERS = 22;
     private static final int COLOR_R_MARKERS = 201;
+
   CustomInfoWindowAdapter customInfoWindowAdapter;
     Polyline polyline;
-    private FragmentTabHost fragHost;
+
+    private FrameLayout fragHost;
+
+    Fragment infoFragment = new StoreDetailsFrag();
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -143,7 +140,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 public void showInfoButtons(final String websiteUrl,Marker marker){
         this.websiteUrl = websiteUrl;
-
+        this.marker = marker;
 btnWebsite.setVisibility(View.VISIBLE);
 btnFindRoute.setVisibility(View.VISIBLE);
     btnWebsite.setOnClickListener(new View.OnClickListener() {
@@ -157,26 +154,39 @@ btnFindRoute.setVisibility(View.VISIBLE);
         @Override
         public void onClick(View v) {
 
+
            if(!selectedMarkerIdHolder.equals(marker.getId())) calculateDirections(marker);//check if it already pressed
             selectedMarkerIdHolder= marker.getId();
             marker.hideInfoWindow();
-            FragmentManager manager =getSupportFragmentManager();
-             StoreDetailsFrag fragment= (StoreDetailsFrag) manager.findFragmentById(R.id.store_dtl_frag);//
-            manager.beginTransaction().replace(R.id.store_dtl_frag,new StoreDetailsFrag()).commit();
-            fragment.assignDataToFragment(MapActivity.this,marker,storeList);
 
-
-//            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-//            Fragment fragment = new Fragment();
-//            ft.replace(R.id.store_dtl_frag, fragment);
-//            ft.commit();
-
+            FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+            fragmentTransaction.add(R.id.frag_holder, infoFragment);
+            fragmentTransaction.commit();
 
 
 
         }
     });
 }
+
+
+    public void attachInfoButton() {
+
+        Log.d(TAG, "attachInfoWindow: Called");
+
+          btnAttach.setVisibility(View.VISIBLE);
+      btnAttach.setOnClickListener(new View.OnClickListener() {
+
+          @Override
+          public void onClick(View view) {
+              FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+
+              fragmentTransaction.attach(infoFragment);
+              fragmentTransaction.commit();
+              btnAttach.setVisibility(View.GONE);
+          }
+      });
+    }
 
     private void initUserLocation() {
         userLocationimage.setOnClickListener(new View.OnClickListener() {
@@ -195,14 +205,15 @@ btnFindRoute.setVisibility(View.VISIBLE);
          btnWebsite = (Button)findViewById(R.id.button_website);
          btnFindRoute = (Button)findViewById(R.id.button_find_route);
          btnCancelRoute = (Button)findViewById(R.id.button_route_mode);
+         btnAttach =(Button)findViewById(R.id.attach_btn);
          btnWebsite.setVisibility(View.GONE);
          btnFindRoute.setVisibility(View.GONE);
+         btnAttach.setVisibility(View.GONE);
          txtRouteMode  =(TextView)findViewById(R.id.txt_route_mode);
 
-        fragHost = (FragmentTabHost) findViewById(R.id.frag_holder);
-        fragHost.setup(this, getSupportFragmentManager(), R.id.store_dtl_frag);
-        fragHost.addTab(fragHost.newTabSpec("Info")
-                .setIndicator("Info"), StoreDetailsFrag.class, null);
+        fragHost = (FrameLayout) findViewById(R.id.frag_holder);
+
+
 
         getLocationPermission();
 
@@ -370,7 +381,7 @@ private void geolocate(){
 
                         Marker marker = map.addMarker(new MarkerOptions()
                                 .position(markerLocation)
-                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.store_icon_small))
+                                .icon(BitmapDescriptorFactory.fromResource(R.drawable.store_icon_3))
                                 .title(store.getName())
                                .snippet(store.getId().toString())
                             //    .snippet(markerStoreInfoString)
@@ -383,7 +394,7 @@ private void geolocate(){
                     map.setInfoWindowAdapter(customInfoWindowAdapter = new CustomInfoWindowAdapter(MapActivity.this,MapActivity.this, getStoreList()));
                     map.setOnInfoWindowClickListener(customInfoWindowAdapter.onInfoWindowClickListener);
                     map.setOnInfoWindowCloseListener(customInfoWindowAdapter.onInfoWindowCloseListener);
-                    map.setOnPolylineClickListener(MapActivity.this::onPolylineClick);
+                    map.setOnPolylineClickListener(MapActivity.this);
                     createMarkersOnBounds(userMarkerLocation,markerList);
 
 
@@ -583,6 +594,13 @@ public void circleCreator(int rColor){
                     borderBar.setEnabled(true);
                     btnCancelRoute.setVisibility(View.GONE);
                     txtRouteMode.setVisibility(View.GONE);
+
+
+                    FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+                    fragmentTransaction.remove(infoFragment);
+                    fragmentTransaction.commit();
+
+
                    // manager.beginTransaction().remove(storeDetailFrag).commit();//removing fragment from view
                     dataFromServer(currentLocation.getLatitude(),currentLocation.getLongitude());//reset the map
 
@@ -674,6 +692,15 @@ public void zoomRoute(List<LatLng> latLngRouteList){
         {polyline.remove();}
 
         return false;
+    }
+
+    public Marker getMarker() {
+        return  marker;
+    }
+
+    @Override
+    public void onFragmentRemove() {
+        btnAttach.setVisibility(View.GONE);
     }
 }
 

@@ -5,9 +5,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -15,6 +18,9 @@ import com.google.android.gms.maps.model.Marker;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Objects;
+
+import static android.support.constraint.Constraints.TAG;
 
 public class StoreDetailsFrag extends Fragment {
 
@@ -22,6 +28,10 @@ public class StoreDetailsFrag extends Fragment {
     TextView titleTxt;
     TextView addressTxt;
     ImageView imgTxt;
+    private Results store;
+    private Marker marker;
+    private Button closeBtn;
+    EventListener listener;
 
     @Nullable
     @Override
@@ -30,37 +40,71 @@ public class StoreDetailsFrag extends Fragment {
         titleTxt =(TextView)view.findViewById(R.id.store_title_dtl);
         addressTxt =(TextView)view.findViewById(R.id.store_desc_dtl);
         imgTxt = (ImageView)view.findViewById(R.id.store_img_dtl);
+        closeBtn = (Button)view.findViewById(R.id.close_dtl_btn);
+        init();
+        closeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                detachFragemnt();
 
+            }
+        });
         return view;
     }
-    public View assignDataToFragment(Context context,Marker marker, ArrayList<Results> storeList){
 
-        String storeAddress="" ;
-        String storeImageUrl="";
-
-
-        String markerIdToString = marker.getSnippet();
-        int markerId =Integer.parseInt(markerIdToString);
-
-        for(Results res:storeList){
-            if(res.getId().equals(markerId)){
-               storeAddress = res.getAddress();
-                storeImageUrl = res.getCompleteImage_url();
-
+    private void init() {
+        if (store != null) {
+            titleTxt.setText(marker.getTitle());
+            addressTxt.setText(store.getAddress());
+            if (store.getImage_url() != null) {
+                Picasso.with(getContext())
+                        .load(store.getImage_url())
+                        .resize(150, 75)
+                        .placeholder(R.drawable.store)
+                        .error(R.drawable.store)
+                        .resize(150, 75)
+                        .into(imgTxt, new MarkerCallback(marker, getContext()));
 
             }
         }
-        titleTxt.setText(marker.getTitle());
-        addressTxt.setText(storeAddress);
-        if(storeImageUrl!=null) {
-            Picasso.with(context)
-                    .load(storeImageUrl)
-                    .resize(150, 75)
-                    .placeholder(R.drawable.store)
-                    .error(R.drawable.store)
-                    .resize(150, 75)
-                    .into(imgTxt, new MarkerCallback(marker,context));
-
-        } return view;
     }
+public void detachFragemnt(){
+    FragmentTransaction fragment_trans = Objects.requireNonNull(getActivity()).getSupportFragmentManager().beginTransaction();//Objects.requireNonNull--just so it cant be null
+    fragment_trans.detach(StoreDetailsFrag.this);
+    fragment_trans.commit();
+    ((MapActivity)getActivity()).attachInfoButton();
+//?
 }
+    @Override
+    public void onDetach() {
+        super.onDetach();
+
+
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        listener.onFragmentRemove();
+    }
+
+    @Override
+        public void onAttach (Context context){
+            super.onAttach(context);
+
+            listener = (EventListener)context;
+
+            marker = ((MapActivity) context).getMarker();
+            String markerIdToString = marker.getSnippet();
+
+            int markerId = Integer.parseInt(markerIdToString);
+
+            for (Results res : ((MapActivity) context).getStoreList()) {
+                if (res.getId() == markerId) {
+                    store = res;
+                }
+            }
+
+        }
+    }

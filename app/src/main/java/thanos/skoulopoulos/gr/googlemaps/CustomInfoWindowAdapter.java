@@ -93,7 +93,7 @@ private final View window;
     public GoogleMap.OnInfoWindowCloseListener onInfoWindowCloseListener = new GoogleMap.OnInfoWindowCloseListener() {
         @Override
         public void onInfoWindowClose(Marker marker) {
-            Toast.makeText(mapActivity, "WINDOW CLOSED", Toast.LENGTH_SHORT).show();
+         //   Toast.makeText(mapActivity, "WINDOW CLOSED", Toast.LENGTH_SHORT).show();
             mapActivity.hideInfo();
         }
     };

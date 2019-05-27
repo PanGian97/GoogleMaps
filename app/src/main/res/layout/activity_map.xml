@@ -155,11 +155,10 @@
         app:layout_constraintGuide_begin="495dp" />
 
 
-
-    <android.support.v4.app.FragmentTabHost
+    <FrameLayout
         android:id="@+id/frag_holder"
-        android:layout_width="312dp"
-        android:layout_height="124dp"
+        android:layout_width="327dp"
+        android:layout_height="142dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
@@ -168,22 +167,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline6">
 
-    <fragment
-        android:id="@+id/store_dtl_frag"
-        android:name="thanos.skoulopoulos.gr.googlemaps.StoreDetailsFrag"
-        android:layout_width="312dp"
-        android:layout_height="124dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
+
+
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/attach_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="show info"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.493"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline6" />
-
-    </android.support.v4.app.FragmentTabHost>
-
-
 
 
 </android.support.constraint.ConstraintLayout>

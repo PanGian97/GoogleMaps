@@ -21,7 +21,7 @@ public class MarkerCallback implements Callback {
     public void onError() {
         Log.e(getClass().getSimpleName(), "Error loading thumbnail!");
 
-        Toast.makeText(context, "Failed to load image ", Toast.LENGTH_SHORT).show();
+      //  Toast.makeText(context, "Failed to load image ", Toast.LENGTH_SHORT).show();
     }
 
     @Override
